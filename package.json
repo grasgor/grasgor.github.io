@@ -9,9 +9,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@blocknote/core": "^0.48.1",
-    "@blocknote/mantine": "^0.48.1",
-    "@blocknote/react": "^0.48.1",
+    "@blocknote/core": "^0.49.0",
+    "@blocknote/mantine": "^0.49.0",
+    "@blocknote/react": "^0.49.0",
     "@types/react-syntax-highlighter": "^15.5.13",
     "front-matter": "^4.0.2",
     "react": "19.0.0",
