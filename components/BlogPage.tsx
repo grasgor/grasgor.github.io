@@ -159,6 +159,9 @@ const createEquationRefPlugin = () => {
   };
 };
 
+const remarkPlugins = [remarkMath, createEquationRefPlugin, remarkGfm];
+const rehypePlugins = [rehypeRaw, rehypeKatex, rehypeSlug];
+
 const BlogPage: React.FC<BlogPageProps> = ({ theme = 'light', initialPostId, initialAnchor }) => {
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(
     () => blogPosts.find(p => p.id === initialPostId) ?? null
@@ -295,7 +298,7 @@ const BlogPage: React.FC<BlogPageProps> = ({ theme = 'light', initialPostId, ini
   if (selectedPost) {
     return (
       <div className="fixed inset-0 bg-white dark:bg-dark transition-colors duration-500 overflow-hidden">
-        <div className="max-w-full ml-0 lg:max-w-4xl lg:ml-[55%] lg:-translate-x-1/2 h-full relative animate-in fade-in slide-in-from-bottom-4 duration-700 px-6">
+        <div className="max-w-full ml-0 lg:max-w-4xl lg:ml-[55%] lg:-translate-x-1/2 h-full relative animate-in fade-in slide-in-from-bottom-2 duration-200 px-6">
 
           {/* Left Sidebar: absolutely positioned to the left of content */}
           <div className="hidden lg:flex flex-col pt-40 h-full overflow-hidden absolute right-full top-0 w-64 pr-0 mr-10">
@@ -361,8 +364,8 @@ const BlogPage: React.FC<BlogPageProps> = ({ theme = 'light', initialPostId, ini
                 [&_pre]:!bg-transparent [&_pre]:!p-0 [&_pre]:!m-0 [&_pre]:!border-0
                 [&_.katex-display]:text-center [&_.katex-display]:block">
                 <ReactMarkdown
-                  remarkPlugins={[remarkMath, createEquationRefPlugin, remarkGfm]}
-                  rehypePlugins={[rehypeRaw, rehypeKatex, rehypeSlug]}
+                  remarkPlugins={remarkPlugins}
+                  rehypePlugins={rehypePlugins}
                   components={{
                     code: CodeBlock,
                     img: ImageRenderer
