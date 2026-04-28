@@ -172,7 +172,7 @@ Several works support this:
 
 - **[On the Expressive Power of Self-Attention Matrices](https://arxiv.org/abs/2106.03764)** *(Likhosherstov et al., AAAI)*  
 
-- **[Representation Degeneration Problem in Training Natural Language Generation Models](https://arxiv.org/abs/2006.04768)** *(Jung et al., ICLR)*  
+- **[Representation Degeneration Problem in Training Natural Language Generation Models](https://arxiv.org/abs/1907.12009)** *(Jun et al., ICLR)*  
 
 
 Putting these together:
