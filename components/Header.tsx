@@ -23,7 +23,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setPage, theme, toggleThem
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-[9999] px-8 py-8 md:px-12 md:py-10 pointer-events-none">
+      <header className={`fixed top-0 left-0 right-0 z-[9999] px-6 py-4 md:px-12 md:py-10 pointer-events-none ${currentPage === 'blogs' ? 'bg-white/95 dark:bg-dark/95 backdrop-blur-sm md:bg-transparent md:dark:bg-transparent md:backdrop-blur-none border-b border-slate-100/80 dark:border-slate-800/80 md:border-none' : ''}`}>
         <div className="max-w-[1800px] mx-auto flex justify-between items-center pointer-events-none">
 
           {/* Home Icon Container - Solid high contrast for home button */}

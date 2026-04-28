@@ -175,7 +175,6 @@ const BlogPage: React.FC<BlogPageProps> = ({ theme = 'light', initialPostId, ini
     setSelectedPost(next);
   }, [initialPostId]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTag, setActiveTag] = useState<string | null>(null);
   const middleRef = useRef<HTMLDivElement>(null);
 
 
@@ -296,7 +295,7 @@ const BlogPage: React.FC<BlogPageProps> = ({ theme = 'light', initialPostId, ini
   if (selectedPost) {
     return (
       <div className="fixed inset-0 bg-white dark:bg-dark transition-colors duration-500 overflow-hidden">
-        <div className="max-w-4xl ml-[55%] -translate-x-1/2 h-full relative animate-in fade-in slide-in-from-bottom-4 duration-700 px-6">
+        <div className="max-w-full ml-0 lg:max-w-4xl lg:ml-[55%] lg:-translate-x-1/2 h-full relative animate-in fade-in slide-in-from-bottom-4 duration-700 px-6">
 
           {/* Left Sidebar: absolutely positioned to the left of content */}
           <div className="hidden lg:flex flex-col pt-40 h-full overflow-hidden absolute right-full top-0 w-64 pr-0 mr-10">
@@ -333,11 +332,11 @@ const BlogPage: React.FC<BlogPageProps> = ({ theme = 'light', initialPostId, ini
 
           {/* Main Content: Scrollable */}
           <div ref={middleRef} className="h-full overflow-y-auto no-scrollbar scroll-smooth">
-            <div className="pt-40 pb-32 flex flex-col items-center lg:block">
+            <div className="pt-20 lg:pt-40 pb-32 w-full">
               {/* Back Button (Mobile) */}
               <button
                 onClick={handleBack}
-                className="lg:hidden flex items-center text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors mb-8 group uppercase tracking-[0.3em] text-[10px] font-black cursor-pointer self-start"
+                className="lg:hidden inline-flex items-center text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors mb-8 group uppercase tracking-[0.3em] text-[10px] font-black cursor-pointer"
               >
                 <svg className="w-3.5 h-3.5 mr-3 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7"></path></svg>
                 Back
@@ -345,7 +344,7 @@ const BlogPage: React.FC<BlogPageProps> = ({ theme = 'light', initialPostId, ini
 
               <div className="mb-16 w-full">
                 <span className="text-blue-600 dark:text-blue-400 font-black text-[10px] tracking-[0.4em] uppercase mb-6 block">{selectedPost.date}</span>
-                <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tighter leading-tight mb-6">
+                <h1 className="text-2xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tighter leading-tight mb-4 md:mb-6">
                   {selectedPost.title}
                 </h1>
                 <div className="text-slate-400 dark:text-slate-500 text-[10px] uppercase font-bold tracking-[0.3em]">
@@ -353,11 +352,11 @@ const BlogPage: React.FC<BlogPageProps> = ({ theme = 'light', initialPostId, ini
                 </div>
               </div>
 
-              <article className="prose prose-slate dark:prose-invert prose-base max-w-none w-full
+              <article className="prose prose-slate dark:prose-invert prose-sm md:prose-base max-w-none w-full
                 prose-headings:font-black prose-headings:tracking-tighter prose-headings:text-slate-950 dark:prose-headings:text-white
-                prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg
+                prose-h1:text-xl prose-h2:text-lg prose-h3:text-base md:prose-h1:text-2xl md:prose-h2:text-xl md:prose-h3:text-lg
                 prose-p:text-slate-700/90 dark:prose-p:text-slate-300/90 prose-p:font-light prose-p:leading-relaxed
-                prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-blockquote:border-blue-500 prose-blockquote:bg-slate-50 dark:prose-blockquote:bg-slate-900/50 prose-blockquote:py-2 prose-blockquote:px-8
+                prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-blockquote:border-blue-500 prose-blockquote:bg-slate-50 dark:prose-blockquote:bg-slate-900/50 prose-blockquote:py-2 prose-blockquote:px-4 md:prose-blockquote:px-8
                 prose-code:text-blue-600 dark:prose-code:text-blue-400 prose-code:bg-blue-50 dark:prose-code:bg-blue-900/20 prose-code:px-1.5 prose-code:rounded-md
                 [&_pre]:!bg-transparent [&_pre]:!p-0 [&_pre]:!m-0 [&_pre]:!border-0
                 [&_.katex-display]:text-center [&_.katex-display]:block">
@@ -381,6 +380,7 @@ const BlogPage: React.FC<BlogPageProps> = ({ theme = 'light', initialPostId, ini
     );
   }
 
+  const [activeTag, setActiveTag] = useState<string | null>(null);
   const allTags = Array.from(new Set(blogPosts.flatMap((p) => p.tags))).sort();
 
   const filteredPosts = blogPosts.filter((post) => {
@@ -392,13 +392,13 @@ const BlogPage: React.FC<BlogPageProps> = ({ theme = 'light', initialPostId, ini
   });
 
   return (
-    <div className="min-h-screen pt-36 pb-16 px-6 md:px-12 bg-white dark:bg-dark transition-colors duration-500">
+    <div className="min-h-screen pt-24 md:pt-36 pb-16 px-5 md:px-12 bg-white dark:bg-dark transition-colors duration-500">
       <div className="max-w-5xl mx-auto animate-in fade-in duration-700">
-        <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-slate-950 dark:text-white mb-4 uppercase">Blog</h1>
-        <p className="text-base text-slate-500 dark:text-slate-400 font-light mb-8 max-w-2xl">Short posts on certain topics that reflect my understanding.</p>
+        <h1 className="text-4xl md:text-8xl font-black tracking-tighter text-slate-950 dark:text-white mb-2 md:mb-4 uppercase">Blog</h1>
+        <p className="text-sm md:text-base text-slate-500 dark:text-slate-400 font-light mb-5 md:mb-8 max-w-2xl">Short posts on certain topics that reflect my understanding.</p>
 
         {/* Search + Tag filters */}
-        <div className="mb-10 space-y-4">
+        <div className="mb-6 md:mb-10 space-y-3 md:space-y-4">
           <div className="relative">
             <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
@@ -408,13 +408,13 @@ const BlogPage: React.FC<BlogPageProps> = ({ theme = 'light', initialPostId, ini
               placeholder="Search posts..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-400 dark:focus:border-blue-500 transition-colors"
+              className="w-full pl-9 pr-4 py-2 md:py-2.5 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-400 dark:focus:border-blue-500 transition-colors"
             />
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex md:flex-wrap gap-1.5 md:gap-2 overflow-x-auto no-scrollbar pb-1 md:pb-0">
             <button
               onClick={() => setActiveTag(null)}
-              className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest transition-colors ${!activeTag ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+              className={`shrink-0 px-2.5 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] font-bold uppercase tracking-widest transition-colors ${!activeTag ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
             >
               All
             </button>
@@ -422,7 +422,7 @@ const BlogPage: React.FC<BlogPageProps> = ({ theme = 'light', initialPostId, ini
               <button
                 key={tag}
                 onClick={() => setActiveTag(activeTag === tag ? null : tag)}
-                className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest transition-colors ${activeTag === tag ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400'}`}
+                className={`shrink-0 px-2.5 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] font-bold uppercase tracking-widest transition-colors ${activeTag === tag ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400'}`}
               >
                 {tag}
               </button>
@@ -438,22 +438,22 @@ const BlogPage: React.FC<BlogPageProps> = ({ theme = 'light', initialPostId, ini
           {filteredPosts.map((post) => (
             <div
               key={post.id}
-              className="group cursor-pointer border-b border-slate-100 dark:border-slate-800/60 py-8 hover:border-blue-200 dark:hover:border-blue-900 transition-colors"
+              className="group cursor-pointer border-b border-slate-100 dark:border-slate-800/60 py-5 md:py-8 hover:border-blue-200 dark:hover:border-blue-900 transition-colors"
               onClick={() => {
                 setSelectedPost(post);
                 window.location.hash = `/blog/${post.id}`;
                 window.scrollTo({ top: 0 });
               }}
             >
-              <div className="flex items-center space-x-4 mb-2">
+              <div className="flex items-center space-x-3 md:space-x-4 mb-1.5 md:mb-2">
                 <span className="text-blue-600 dark:text-blue-400 font-black text-[10px] tracking-[0.4em] uppercase">{post.date}</span>
                 <span className="w-8 h-[1px] bg-slate-200 dark:bg-slate-800 group-hover:bg-blue-300 dark:group-hover:bg-blue-700 group-hover:w-14 transition-all duration-500"></span>
                 <span className="text-slate-400 dark:text-slate-500 text-[10px] uppercase font-bold tracking-[0.3em]">{post.readTime}</span>
               </div>
-              <h2 className="text-2xl md:text-3xl font-black text-slate-950 dark:text-white leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors mb-2 tracking-tighter">
+              <h2 className="text-xl md:text-3xl font-black text-slate-950 dark:text-white leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors mb-1.5 md:mb-2 tracking-tighter">
                 {post.title}
               </h2>
-              <p className="text-slate-500 dark:text-slate-400 text-sm font-light leading-relaxed max-w-3xl mb-3">
+              <p className="text-slate-500 dark:text-slate-400 text-xs md:text-sm font-light leading-relaxed max-w-3xl mb-2 md:mb-3">
                 <ReactMarkdown
                   components={{
                     p: ({ children }) => <>{children}</>,
@@ -467,9 +467,9 @@ const BlogPage: React.FC<BlogPageProps> = ({ theme = 'light', initialPostId, ini
                   {post.snippet}
                 </ReactMarkdown>
               </p>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex overflow-x-auto no-scrollbar gap-1 pb-0.5 md:flex-wrap">
                 {post.tags.map((tag) => (
-                  <span key={tag} className="text-[9px] font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-full">
+                  <span key={tag} className="text-[9px] font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded-full">
                     {tag}
                   </span>
                 ))}

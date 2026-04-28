@@ -14,4 +14,7 @@
 .katex-display {
   text-align: center !important;
   display: block !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  padding-bottom: 0.25rem;
 }
