@@ -33,13 +33,13 @@ const HomePage: React.FC<HomePageProps> = ({ theme, setPage }) => {
         <div className="max-w-5xl">
           <button
             onClick={() => setPage('home')}
-            className="text-6xl md:text-[8rem] font-black tracking-tighter leading-[0.85] text-white mb-10 transition-all duration-500 text-left active:scale-[0.98] outline-none"
+            className="text-4xl md:text-[5rem] font-black tracking-tighter leading-[0.85] text-white mb-10 transition-all duration-500 text-left active:scale-[0.98] outline-none"
           >
             grasgor<br />
           </button>
-          <div className="mt-4">
-            <p className="max-w-lg text-lg text-white/80 leading-relaxed font-light">
-              I like art and fast models.
+          <div className="mt-6 max-w-sm space-y-3">
+            <p className="text-base text-white/80 leading-relaxed font-light">
+              i like art and fast models.
             </p>
           </div>
         </div>

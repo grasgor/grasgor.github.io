@@ -22,3 +22,14 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+public/blog/diffusion-from-first-principles/
+public/blog/flash-attention/
+src/posts/diffusion-from-first-principles.md
+src/posts/flash-attention.md
+src/posts/jepa.md
+src/posts/probability-refresher.md
+.codex
+
+public/blog/xsa/
+src/posts/xsa.md

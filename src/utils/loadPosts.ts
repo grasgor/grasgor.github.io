@@ -25,7 +25,7 @@ function calcReadTime(text: string): string {
 }
 
 export const loadPosts = (): BlogPost[] => {
-    const modules = import.meta.glob('../posts/*.md', { as: 'raw', eager: true }) as Record<string, string>;
+    const modules = import.meta.glob('../posts/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 
     const posts = Object.values(modules).map((content) => {
         const { attributes, body } = frontMatter<FrontMatterAttributes>(content);

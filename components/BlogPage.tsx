@@ -4,6 +4,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
 import rehypeSlug from 'rehype-slug';
+import rehypeRaw from 'rehype-raw';
 
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -17,6 +18,7 @@ const blogPosts: BlogPost[] = loadPosts();
 interface BlogPageProps {
   theme?: Theme;
   initialPostId?: string;
+  initialAnchor?: string;
 }
 
 interface Heading {
@@ -25,25 +27,167 @@ interface Heading {
   level: number;
 }
 
-const BlogPage: React.FC<BlogPageProps> = ({ theme = 'light', initialPostId }) => {
+type EquationEntry = {
+  id: string;
+  number: number;
+};
+
+const EQUATION_LABEL_PATTERN = /\\label\{([^{}]+)\}/g;
+const EQUATION_REF_PATTERN = /\\(eqref|ref)\{([^{}]+)\}/g;
+
+const toEquationId = (label: string): string =>
+  `eq-${label.trim().toLowerCase().replace(/[^a-z0-9_-]+/g, '-')}`;
+
+const addEquationTag = (latex: string, number: number): string => {
+  if (/\\tag\{[^}]*\}/.test(latex)) {
+    return latex;
+  }
+  return `${latex} \\tag{${number}}`;
+};
+
+const createEquationRefPlugin = () => {
+  return (tree: any) => {
+    const labels = new Map<string, EquationEntry>();
+    let counter = 0;
+
+    const registerLabels = (node: any) => {
+      if (!node || !Array.isArray(node.children)) return;
+
+      for (let i = 0; i < node.children.length; i++) {
+        const child = node.children[i];
+
+        if (child?.type === 'math' && typeof child.value === 'string') {
+          const matches = [...child.value.matchAll(EQUATION_LABEL_PATTERN)];
+          if (matches.length > 0) {
+            const rawLabel = matches[matches.length - 1][1]?.trim();
+            if (rawLabel) {
+              let entry = labels.get(rawLabel);
+              if (!entry) {
+                counter += 1;
+                entry = { id: toEquationId(rawLabel), number: counter };
+                labels.set(rawLabel, entry);
+              }
+
+              const stripped = child.value.replace(EQUATION_LABEL_PATTERN, '').trim();
+              child.value = addEquationTag(stripped, entry.number);
+
+              const anchorNode = {
+                type: 'html',
+                value: `<span id="${entry.id}" class="eq-anchor" aria-hidden="true"></span>`,
+              };
+              const prev = node.children[i - 1];
+              const hasAnchorAlready =
+                prev?.type === 'html' &&
+                typeof prev.value === 'string' &&
+                prev.value.includes(`id="${entry.id}"`);
+
+              if (!hasAnchorAlready) {
+                node.children.splice(i, 0, anchorNode);
+                i += 1;
+              }
+            }
+          }
+        }
+
+        registerLabels(child);
+      }
+    };
+
+    const replaceRefs = (node: any, parentType?: string) => {
+      if (!node || !Array.isArray(node.children)) return;
+
+      for (let i = 0; i < node.children.length; i++) {
+        const child = node.children[i];
+
+        if (
+          child?.type === 'text' &&
+          typeof child.value === 'string' &&
+          parentType !== 'link'
+        ) {
+          const value = child.value;
+          EQUATION_REF_PATTERN.lastIndex = 0;
+
+          const replacements: any[] = [];
+          let start = 0;
+          let foundAny = false;
+          let match: RegExpExecArray | null = null;
+
+          while ((match = EQUATION_REF_PATTERN.exec(value)) !== null) {
+            foundAny = true;
+            if (match.index > start) {
+              replacements.push({ type: 'text', value: value.slice(start, match.index) });
+            }
+
+            const command = match[1];
+            const label = match[2].trim();
+            const entry = labels.get(label);
+
+            if (entry) {
+              replacements.push({
+                type: 'link',
+                url: `#${entry.id}`,
+                children: [
+                  {
+                    type: 'text',
+                    value: command === 'eqref' ? `(${entry.number})` : `${entry.number}`,
+                  },
+                ],
+              });
+            } else {
+              replacements.push({ type: 'text', value: match[0] });
+            }
+
+            start = match.index + match[0].length;
+          }
+
+          if (foundAny) {
+            if (start < value.length) {
+              replacements.push({ type: 'text', value: value.slice(start) });
+            }
+            node.children.splice(i, 1, ...replacements);
+            i += replacements.length - 1;
+            continue;
+          }
+        }
+
+        replaceRefs(child, child?.type);
+      }
+    };
+
+    registerLabels(tree);
+    replaceRefs(tree);
+  };
+};
+
+const BlogPage: React.FC<BlogPageProps> = ({ theme = 'light', initialPostId, initialAnchor }) => {
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(
     () => blogPosts.find(p => p.id === initialPostId) ?? null
   );
   const [toc, setToc] = useState<Heading[]>([]);
+  const postHistory = useRef<string[]>([]);
+
+  useEffect(() => {
+    const prev = selectedPost?.id;
+    const next = blogPosts.find(p => p.id === initialPostId) ?? null;
+    if (prev && prev !== next?.id) {
+      postHistory.current.push(prev);
+    }
+    setSelectedPost(next);
+  }, [initialPostId]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const middleRef = useRef<HTMLDivElement>(null);
 
-  const redirectScrollToMiddle = (e: React.WheelEvent) => {
-    if (middleRef.current) {
-      middleRef.current.scrollTop += e.deltaMode === 0 ? e.deltaY : e.deltaY * 20;
-    }
-  };
 
   const handleBack = () => {
-    setSelectedPost(null);
-    setToc([]);
-    window.location.hash = '/blog';
+    const prevId = postHistory.current.pop();
+    if (prevId) {
+      window.location.hash = `/blog/${prevId}`;
+    } else {
+      setSelectedPost(null);
+      setToc([]);
+      window.location.hash = '/blog';
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -53,10 +197,10 @@ const BlogPage: React.FC<BlogPageProps> = ({ theme = 'light', initialPostId }) =
       const headings: Heading[] = [];
       const lines = selectedPost.content.split('\n');
       lines.forEach((line) => {
-        const match = line.match(/^(#{1,3})\s+(.*)$/);
+        const match = line.match(/^\s*(#{1,3})\s+(.*)$/);
         if (match) {
           const level = match[1].length;
-          const text = match[2].replace(/`([^`]+)`/g, '$1');
+          const text = match[2].replace(/`([^`]+)`/g, '$1').replace(/\$[^$]*\$/g, '').trim();
           // Simple slugify to match rehype-slug (approximate)
           const id = text
             .toLowerCase()
@@ -69,6 +213,21 @@ const BlogPage: React.FC<BlogPageProps> = ({ theme = 'light', initialPostId }) =
       setToc(headings);
     }
   }, [selectedPost]);
+
+  useEffect(() => {
+    if (selectedPost && initialAnchor) {
+      const el = document.getElementById(initialAnchor);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        // Element may not be rendered yet; retry after a short delay
+        const t = setTimeout(() => {
+          document.getElementById(initialAnchor)?.scrollIntoView({ behavior: 'smooth' });
+        }, 300);
+        return () => clearTimeout(t);
+      }
+    }
+  }, [selectedPost, initialAnchor]);
 
   // Custom renderer for code blocks
   const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
@@ -87,7 +246,7 @@ const BlogPage: React.FC<BlogPageProps> = ({ theme = 'light', initialPostId }) =
         }}
         {...props}
       >
-        {String(children).replace(/\n$/, '')}
+        {String(children).trim()}
       </SyntaxHighlighter>
     ) : (
       <code className={className} {...props}>
@@ -97,7 +256,7 @@ const BlogPage: React.FC<BlogPageProps> = ({ theme = 'light', initialPostId }) =
   };
 
   // Custom renderer for images
-  const ImageRenderer = ({ src, alt, ...props }: any) => {
+  const ImageRenderer = ({ src, alt, title, ...props }: any) => {
     const [currentSrc, setCurrentSrc] = useState(src);
 
     useEffect(() => {
@@ -127,7 +286,8 @@ const BlogPage: React.FC<BlogPageProps> = ({ theme = 'light', initialPostId }) =
       <img
         src={currentSrc}
         alt={alt}
-        className="rounded-lg my-8 w-full"
+        className="rounded-lg my-8"
+        style={{ width: title ?? '100%' }}
         {...props}
       />
     );
@@ -135,11 +295,11 @@ const BlogPage: React.FC<BlogPageProps> = ({ theme = 'light', initialPostId }) =
 
   if (selectedPost) {
     return (
-      <div className="fixed inset-0 bg-white dark:bg-dark transition-colors duration-500 overflow-hidden" onWheel={redirectScrollToMiddle}>
-        <div className="max-w-7xl mx-auto h-full grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-8 md:gap-12 px-6 md:px-12 relative animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="fixed inset-0 bg-white dark:bg-dark transition-colors duration-500 overflow-hidden">
+        <div className="max-w-4xl ml-[55%] -translate-x-1/2 h-full relative animate-in fade-in slide-in-from-bottom-4 duration-700 px-6">
 
-          {/* Left Sidebar: Back Button + TOC (Desktop) */}
-          <div className="hidden lg:flex flex-col pt-40 h-full overflow-hidden shrink-0">
+          {/* Left Sidebar: absolutely positioned to the left of content */}
+          <div className="hidden lg:flex flex-col pt-40 h-full overflow-hidden absolute right-full top-0 w-64 pr-0 mr-10">
             <button
               onClick={handleBack}
               className="flex items-center text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors group uppercase tracking-[0.3em] text-[10px] font-black cursor-pointer mb-10"
@@ -147,7 +307,7 @@ const BlogPage: React.FC<BlogPageProps> = ({ theme = 'light', initialPostId }) =
               <svg className="w-3.5 h-3.5 mr-3 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7"></path></svg>
               Back
             </button>
-            <div className="overflow-y-auto max-h-[calc(100vh-14rem)] pr-2 no-scrollbar">
+            <div className="overflow-y-auto max-h-[calc(100vh-14rem)] no-scrollbar">
               <h4 className="text-slate-900 dark:text-white font-black text-[10px] uppercase tracking-[0.2em] mb-6 sticky top-0 bg-white dark:bg-dark pb-2 z-10">On this page</h4>
               <nav className="flex flex-col space-y-3 pb-8">
                 {toc.map((heading) => (
@@ -172,7 +332,7 @@ const BlogPage: React.FC<BlogPageProps> = ({ theme = 'light', initialPostId }) =
           </div>
 
           {/* Main Content: Scrollable */}
-          <div ref={middleRef} className="min-w-0 h-full overflow-y-auto no-scrollbar scroll-smooth" onWheel={(e) => e.stopPropagation()}>
+          <div ref={middleRef} className="h-full overflow-y-auto no-scrollbar scroll-smooth">
             <div className="pt-40 pb-32 flex flex-col items-center lg:block">
               {/* Back Button (Mobile) */}
               <button
@@ -185,7 +345,7 @@ const BlogPage: React.FC<BlogPageProps> = ({ theme = 'light', initialPostId }) =
 
               <div className="mb-16 w-full">
                 <span className="text-blue-600 dark:text-blue-400 font-black text-[10px] tracking-[0.4em] uppercase mb-6 block">{selectedPost.date}</span>
-                <h1 className="text-4xl md:text-6xl font-black text-slate-900 dark:text-white tracking-tighter leading-[0.9] mb-8">
+                <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tighter leading-tight mb-6">
                   {selectedPost.title}
                 </h1>
                 <div className="text-slate-400 dark:text-slate-500 text-[10px] uppercase font-bold tracking-[0.3em]">
@@ -193,15 +353,17 @@ const BlogPage: React.FC<BlogPageProps> = ({ theme = 'light', initialPostId }) =
                 </div>
               </div>
 
-              <article className="prose prose-slate dark:prose-invert prose-lg max-w-none w-full
+              <article className="prose prose-slate dark:prose-invert prose-base max-w-none w-full
                 prose-headings:font-black prose-headings:tracking-tighter prose-headings:text-slate-950 dark:prose-headings:text-white
+                prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg
                 prose-p:text-slate-700/90 dark:prose-p:text-slate-300/90 prose-p:font-light prose-p:leading-relaxed
                 prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-blockquote:border-blue-500 prose-blockquote:bg-slate-50 dark:prose-blockquote:bg-slate-900/50 prose-blockquote:py-2 prose-blockquote:px-8
                 prose-code:text-blue-600 dark:prose-code:text-blue-400 prose-code:bg-blue-50 dark:prose-code:bg-blue-900/20 prose-code:px-1.5 prose-code:rounded-md
-                [&_pre]:!bg-transparent [&_pre]:!p-0 [&_pre]:!m-0 [&_pre]:!border-0">
+                [&_pre]:!bg-transparent [&_pre]:!p-0 [&_pre]:!m-0 [&_pre]:!border-0
+                [&_.katex-display]:text-center [&_.katex-display]:block">
                 <ReactMarkdown
-                  remarkPlugins={[remarkMath, remarkGfm]}
-                  rehypePlugins={[rehypeKatex, rehypeSlug]}
+                  remarkPlugins={[remarkMath, createEquationRefPlugin, remarkGfm]}
+                  rehypePlugins={[rehypeRaw, rehypeKatex, rehypeSlug]}
                   components={{
                     code: CodeBlock,
                     img: ImageRenderer
